@@ -51,7 +51,13 @@ class TSFileConvertor:
     class TSFileIsEmpty(Exception):
         pass
 
-    def __init__(self, files: List[str], sd_card_path:str, output_dir: str = OUTPUT_DIR, combine_output_dir: str = COMBINED_OUTPUT_DIR):
+    def __init__(
+        self,
+        files: List[str],
+        sd_card_path: str,
+        output_dir: str = OUTPUT_DIR,
+        combine_output_dir: str = COMBINED_OUTPUT_DIR,
+    ):
         self.sd_card_path = sd_card_path
         self.output_dir: str = output_dir
         self.combine_output_dir: str = combine_output_dir
@@ -90,7 +96,7 @@ class TSFileConvertor:
             if filename.endswith(".ts"):
                 file_path = os.path.join(self.sd_card_path, filename)
                 probe = ffmpeg.probe(file_path)
-                duration = float(probe['format']['duration'])
+                duration = float(probe["format"]["duration"])
 
                 # Delete MP4 files that are 10 seconds or less
                 if duration <= filter_duration:
@@ -100,12 +106,19 @@ class TSFileConvertor:
     def __ts2mp4(self) -> None:
         current = 1
         for input_file in self.ts_files:
-            output_file = os.path.join(self.output_dir, os.path.splitext(os.path.basename(input_file))[0] + ".mp4")
+            output_file = os.path.join(
+                self.output_dir,
+                os.path.splitext(os.path.basename(input_file))[0] + ".mp4",
+            )
 
             # Convert the TS file to MP4
             print(f"{current} / {len(self.ts_files)}")
-            print(f"File name: {output_file}. Output: {output_file}. Convert is starting. ")
-            ffmpeg.input(input_file).output(output_file).run(overwrite_output=True, quiet=True)
+            print(
+                f"File name: {output_file}. Output: {output_file}. Convert is starting. "
+            )
+            ffmpeg.input(input_file).output(output_file).run(
+                overwrite_output=True, quiet=True
+            )
             print(f"File name: {output_file}. Convert is end. ")
             current += 1
 
@@ -139,19 +152,34 @@ class TSFileConvertor:
         for date_str, file_list in files_by_date.items():
             # 1つの場合は 日付.mp4でoutputからファイル移動をする
             if len(file_list) <= 1:
-                shutil.move(os.path.join(self.output_dir, file_list[0].origin), os.path.join(self.combine_output_dir, f"{date_str}.mp4"))
-                print(f"Moved {file_list[0]} to {os.path.join(self.output_dir, f'{date_str}.mp4')}")
+                shutil.move(
+                    os.path.join(self.output_dir, file_list[0].origin),
+                    os.path.join(self.combine_output_dir, f"{date_str}.mp4"),
+                )
+                print(
+                    f"Moved {file_list[0]} to {os.path.join(self.output_dir, f'{date_str}.mp4')}"
+                )
 
             else:
                 video_clips = []
                 for video in sorted(file_list, key=lambda x: x.time):
-                    video_clips.append(VideoFileClip(os.path.join(self.output_dir, video.origin)))
+                    video_clips.append(
+                        VideoFileClip(os.path.join(self.output_dir, video.origin))
+                    )
 
                 try:
-                    complete_clip: CompositeVideoClip = concatenate_videoclips(video_clips, method="compose")
-                    complete_clip.write_videofile(os.path.join(self.combine_output_dir, f"{date_str}.mp4"),
-                                                  fps=30, codec="libx264", audio_codec="aac")
-                    print(f"Combined files for {date_str} into {os.path.join(self.output_dir, f"{date_str}.mp4")}")
+                    complete_clip: CompositeVideoClip = concatenate_videoclips(
+                        video_clips, method="compose"
+                    )
+                    complete_clip.write_videofile(
+                        os.path.join(self.combine_output_dir, f"{date_str}.mp4"),
+                        fps=30,
+                        codec="libx264",
+                        audio_codec="aac",
+                    )
+                    print(
+                        f"Combined files for {date_str} into {os.path.join(self.output_dir, f"{date_str}.mp4")}"
+                    )
 
                 except Exception as e:
                     print(f"Error combining files for {date_str}: {e}")
@@ -179,7 +207,9 @@ def convert_ts_file(sd_card_path: str) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Monitor SD card and convert TS files to MP4.")
+    parser = argparse.ArgumentParser(
+        description="Monitor SD card and convert TS files to MP4."
+    )
     parser.add_argument("sd_card_path", type=str, help="Path to the SD card directory.")
 
     args = parser.parse_args()
@@ -189,4 +219,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
