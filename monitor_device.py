@@ -18,7 +18,7 @@ class ExternalDeviceEventHandler(FileSystemEventHandler):
         print(f"Event Start: {event.event_type} {event.src_path}")
         # 監視対象のフォルダだった場合, TSファイルの変換・整理の処理を行う
         if event.dest_path.endswith(self.usb_name):
-            sd_card_path = os.path.join("/Volumes", self.usb_name, *os.path.splitext(self.movie_target_path))
+            sd_card_path = os.path.join(self.monitor_volume_path, self.usb_name, *os.path.splitext(self.movie_target_path))
             convert_ts_file(sd_card_path)
 
 
