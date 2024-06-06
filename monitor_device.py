@@ -1,10 +1,10 @@
+import argparse
 import os
 import time
-import argparse
 
 from loguru import logger
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
 from ts_convertor import convert_ts_file
 

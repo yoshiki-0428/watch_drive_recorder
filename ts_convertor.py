@@ -1,12 +1,11 @@
 import os
 import shutil
-
-import ffmpeg
 from typing import Dict, List
 
+import ffmpeg
 from loguru import logger
 
-from lib.render import combine_videos, speed_up_video, render_zoomed_video
+from lib.render import combine_videos, render_zoomed_video, speed_up_video
 from model.movie_filename import MovieFilename
 
 OUTPUT_DIR = "output"
