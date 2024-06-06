@@ -1,19 +1,21 @@
 from typing import List
 import ffmpeg
 
-from lib.log import time_log
+from lib.log import time_elapsed
 
 
+@time_elapsed
 def combine_videos(input_files: List[str], output_file: str):
     """
     複数の動画ファイルを結合する。
     """
     inputs = [ffmpeg.input(file) for file in input_files]
     combined = ffmpeg.concat(*inputs)
-    with time_log("combine_videos"):
-        ffmpeg.output(combined, output_file).run(overwrite_output=True, quiet=True)
+
+    ffmpeg.output(combined, output_file).run(overwrite_output=True, quiet=True)
 
 
+@time_elapsed
 def render_zoomed_video(
     input_file: str, output_file: str, zoom_factor: float = 0.9, center: bool = True
 ):
@@ -37,10 +39,10 @@ def render_zoomed_video(
     stream = ffmpeg.input(input_file)
     stream = ffmpeg.crop(stream, x, y, new_width, new_height)
 
-    with time_log("render_zoomed_video"):
-        ffmpeg.output(stream, output_file).run(overwrite_output=True, quiet=True)
+    ffmpeg.output(stream, output_file).run(overwrite_output=True, quiet=True)
 
 
+@time_elapsed
 def speed_up_video(input_file: str, output_file: str, speed_factor: float = 10):
     """
     動画の速度を指定の倍率で上げる。
@@ -48,8 +50,7 @@ def speed_up_video(input_file: str, output_file: str, speed_factor: float = 10):
     stream = ffmpeg.input(input_file)
     accelerated = ffmpeg.filter(stream, "setpts", f"PTS/{speed_factor}")
 
-    with time_log("speed_up_video"):
-        ffmpeg.output(accelerated, output_file).run(overwrite_output=True, quiet=True)
+    ffmpeg.output(accelerated, output_file).run(overwrite_output=True, quiet=True)
 
 
 # if __name__ == "__main__":
