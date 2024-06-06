@@ -72,7 +72,6 @@ class TSFileConvertor:
                     os.path.join(self.output_dir, f"{date_str}_combined.mp4"),
                 )
 
-            # TODO 一部の場面を切り取って緯度と経度を取得してファイル名を変更する
             # 早送りの処理をいれる
             speed_up_video(
                 os.path.join(self.output_dir, f"{date_str}_combined.mp4"),
@@ -86,6 +85,9 @@ class TSFileConvertor:
                 zoom_factor=0.84,
                 center=True,
             )
+
+            # TODO 一部の場面を切り取って緯度と経度を取得してファイル名を変更する
+            # TODO Delete file
 
         # Delete ts file
         [os.remove(file.origin) for file in self.ts_files]
