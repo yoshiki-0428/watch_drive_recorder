@@ -1,9 +1,10 @@
 import os
-import pathlib
 import shutil
 
 import ffmpeg
 from typing import Dict, List
+
+from loguru import logger
 
 from lib.render import combine_videos, speed_up_video, render_zoomed_video
 from model.movie_filename import MovieFilename
@@ -34,7 +35,7 @@ class TSFileConverter:
             try:
                 movie_filename = MovieFilename(os.path.join(abs_sd_path, file))
             except MovieFilename.MovieFilenameError as e:
-                print(e)
+                logger.warning(e)
                 continue
             if os.path.isfile(
                 os.path.join(abs_sd_path, file)
@@ -56,7 +57,7 @@ class TSFileConverter:
             os.makedirs(output_dir)
 
     def convert(self) -> None:
-        print(f"Founded {len(self.ts_files)} TS files. Convert is starting...")
+        logger.info(f"Founded {len(self.ts_files)} TS files. Convert is starting...")
 
         for date_str, file_list in TSFileConverter.grouping_files_by_day(
             self.ts_files
@@ -103,7 +104,7 @@ class TSFileConverter:
                 # Delete MP4 files that are 10 seconds or less
                 if duration <= filter_duration:
                     os.remove(file_path)
-                    print(f"Deleted {file_path} (duration: {duration} seconds)")
+                    logger.info(f"Deleted {file_path} (duration: {duration} seconds)")
 
     @staticmethod
     def grouping_files_by_day(
@@ -122,7 +123,7 @@ class TSFileConverter:
 
 
 def convert_ts_file(sd_card_path: str) -> None:
-    print(f"Converting TS files in {sd_card_path}...")
+    logger.info(f"Converting TS files in {sd_card_path}...")
     abs_sd_path = os.path.abspath(sd_card_path)
     files = []
     for file in os.listdir(abs_sd_path):
@@ -134,9 +135,9 @@ def convert_ts_file(sd_card_path: str) -> None:
         convertor.convert()
 
     except TSFileConverter.TSFileIsEmpty as e:
-        print(e)
+        logger.warning(e)
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
 
 
 # def main():

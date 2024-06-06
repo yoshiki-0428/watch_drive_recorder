@@ -1,6 +1,8 @@
 import os
 import time
 import argparse
+
+from loguru import logger
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
@@ -15,7 +17,7 @@ class ExternalDeviceEventHandler(FileSystemEventHandler):
         self.movie_target_path = movie_target_path
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        print(f"Event Start: {event.event_type} {event.src_path}")
+        logger.info(f"Event Start: {event.event_type} {event.src_path}")
         # 監視対象のフォルダだった場合, TSファイルの変換・整理の処理を行う
         if event.dest_path.endswith(self.usb_name):
             sd_card_path = os.path.join(

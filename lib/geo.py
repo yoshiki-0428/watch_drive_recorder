@@ -1,6 +1,7 @@
 import pytesseract
 from PIL import Image
 from geopy.geocoders import Nominatim
+from loguru import logger
 
 
 def extract_text_from_image(image_path: str) -> str:
@@ -27,7 +28,7 @@ def get_address(latitude: float, longitude: float) -> str:
 def get_address_from_image(image_path: str) -> str:
     text = extract_text_from_image(image_path)
     address = get_address(*extract_coordinates(text))
-    print("Address:", address)
+    logger.info("Address:", address)
     return address
 
 # def get_address(latitude: float, longitude: float):
@@ -40,4 +41,4 @@ def get_address_from_image(image_path: str) -> str:
 # longitude = 139.693580
 #
 # address = get_address(latitude, longitude)
-# print("Address:", address)
+# logger.info("Address:", address)
