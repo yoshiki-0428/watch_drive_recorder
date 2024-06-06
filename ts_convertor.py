@@ -53,7 +53,6 @@ class TSFileConvertor:
 
     def __init__(
         self,
-        files: List[str],
         sd_card_path: str,
         output_dir: str = OUTPUT_DIR,
         combine_output_dir: str = COMBINED_OUTPUT_DIR,
@@ -64,7 +63,13 @@ class TSFileConvertor:
 
         # Filter the files to only include TS files and time check
         self.__filter_ts_files()
-        time.sleep(1)
+
+        abs_sd_path = os.path.abspath(sd_card_path)
+        files = []
+        for file in os.listdir(abs_sd_path):
+            if os.path.isfile(os.path.join(abs_sd_path, file)):
+                files.append(os.path.join(abs_sd_path, file))
+
         ts_files = [file for file in files if file.endswith(".ts")]
         if len(ts_files) == 0:
             raise TSFileConvertor.TSFileIsEmpty("No TS files found. Exiting...")
@@ -197,7 +202,7 @@ def convert_ts_file(sd_card_path: str) -> None:
             files.append(os.path.join(abs_sd_path, file))
 
     try:
-        convertor: TSFileConvertor = TSFileConvertor(files, sd_card_path)
+        convertor: TSFileConvertor = TSFileConvertor(sd_card_path)
         convertor.convert()
 
     except TSFileConvertor.TSFileIsEmpty as e:
