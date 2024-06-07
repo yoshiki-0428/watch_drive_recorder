@@ -1,10 +1,11 @@
 import os
 import shutil
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import ffmpeg
 from loguru import logger
 
+from lib.geo import get_address_from_image
 from lib.render import combine_videos, render_zoomed_video, speed_up_video
 from model.movie_filename import MovieFilename
 
@@ -87,8 +88,19 @@ class TSFileConverter:
                 center=True,
             )
 
-            # TODO 一部の場面を切り取って緯度と経度を取得してファイル名を変更する
-            # TODO Delete file
+            # 動画のGPS情報から住所を取得する
+            start_loc, end_loc = TSFileConverter.get_location(
+                os.path.join(self.output_dir, f"{date_str}_combined.mp4")
+            )
+            shutil.copy(
+                os.path.join(self.output_dir, f"{date_str}_crop.mp4"),
+                os.path.join(self.output_dir, f"{date_str}__{start_loc}_{end_loc}.mp4"),
+            )
+
+            # Delete file
+            os.remove(os.path.join(self.output_dir, f"{date_str}_combined.mp4"))
+            os.remove(os.path.join(self.output_dir, f"{date_str}_sppedup.mp4"))
+            os.remove(os.path.join(self.output_dir, f"{date_str}_crop.mp4"))
 
         # Delete ts file
         [os.remove(file.origin) for file in self.ts_files]
@@ -119,6 +131,46 @@ class TSFileConverter:
             files_by_date[date_str].append(ts_file)
 
         return files_by_date
+
+    @staticmethod
+    def get_location(movie_path: str, start_time: int = 1) -> Tuple[str, str]:
+        """
+        1つの動画から2つの地理情報を取得する
+
+        :param start_time:
+        :param movie_path:
+        :return:
+        """
+        # 動画の秒数を取得する
+        probe = ffmpeg.probe(movie_path)
+        end_time = float(probe["format"]["duration"]) - 2
+
+        # 動画から1秒時点の画像をffmpegで出す
+        ffmpeg.input(movie_path, ss=start_time).filter(
+            "crop", w=420, h=100, x=0, y=0
+        ).output(f"{movie_path}_start.jpg", vframes=1).run(
+            overwrite_output=True, quiet=True
+        )
+
+        # 動画から終わりの場所をffmpegで出す
+        ffmpeg.input(movie_path, ss=end_time).filter(
+            "crop", w=420, h=100, x=0, y=0
+        ).output(f"{movie_path}_end.jpg", vframes=1).run(
+            overwrite_output=True, quiet=True
+        )
+
+        start_loc = get_address_from_image(f"{movie_path}_start.jpg")
+        if start_loc is None:
+            start_loc = "unknown"
+
+        end_loc = get_address_from_image(f"{movie_path}_end.jpg")
+        if end_loc is None:
+            end_loc = "unknown"
+
+        os.remove(f"{movie_path}_start.jpg")
+        os.remove(f"{movie_path}_end.jpg")
+
+        return start_loc, end_loc
 
 
 def convert_ts_file(sd_card_path: str) -> None:

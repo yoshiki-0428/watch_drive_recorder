@@ -19,17 +19,35 @@ def extract_coordinates(text: str) -> tuple[float, float] or None:
     return None, None
 
 
-def get_address(latitude: float, longitude: float) -> str:
+def get_address(latitude: float, longitude: float) -> str | None:
     geolocator = Nominatim(user_agent="test")
     location = geolocator.reverse((latitude, longitude), language="ja")
+    if location is None or location.address is None:
+        return None
+
     return location.address
 
 
-def get_address_from_image(image_path: str) -> str:
+def get_address_from_image(image_path: str) -> str | None:
     text = extract_text_from_image(image_path)
+    logger.debug(f"OCR Text: {text}")
     address = get_address(*extract_coordinates(text))
-    logger.info("Address:", address)
-    return address
+    logger.info(f"Address: {address}")
+    if address is None:
+        return None
+
+    address = str.replace(address, " ", "")
+    address_arr = address.split(",")
+    if len(address_arr) < 4:
+        return None
+
+    pref = address_arr[-3]
+    city = address_arr[-4]
+    detail = address_arr[0]
+    res = f"{pref} {city} {detail}"
+    logger.info(f"Custom Address: {res}")
+    return res
+
 
 # def get_address(latitude: float, longitude: float):
 #     geolocator = Nominatim(user_agent="test")
