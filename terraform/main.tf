@@ -56,13 +56,14 @@ resource "google_cloud_run_service" "video_editor" {
 #         }
         # 必要な環境変数を追加
       }
-      timeout_seconds = 1200 # 20分
+      timeout_seconds = 2400 # 40分
+      container_concurrency = 10
       service_account_name = google_service_account.movie_convertor.email  # Cloud Run が使用するサービスアカウント
 
     }
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale" = "5" # スケーリング上限
+        "autoscaling.knative.dev/maxScale" = "2" # スケーリング上限
 #         "run.googleapis.com/cloudsql-instances" = google_sql_database_instance.instance.connection_name # Cloud SQL 接続
       }
     }
@@ -76,6 +77,7 @@ resource "google_cloud_run_service" "video_editor" {
 
   depends_on = [
     google_project_service.run_api,
+    google_storage_bucket.video-source
   ]
 }
 

@@ -41,7 +41,7 @@ def process_gcs_event(request_body: dict = None):
         download_blob(bucket_name, file_name, f"input/{file_name}")
 
         # 変換処理を実行
-        convert_ts_file("input")  # バケット名とファイル名を渡す
+        convert_ts_file("input")
 
         return {"message": "Event received and processed successfully."}
     except (KeyError, json.JSONDecodeError) as e:
@@ -49,7 +49,7 @@ def process_gcs_event(request_body: dict = None):
         raise HTTPException(status_code=400, detail="Invalid event data")
     except Exception as e:
         logger.error(f"Error processing event: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=204, detail="Not found resource")
 
 
 if __name__ == "__main__":
