@@ -15,7 +15,9 @@ class MovieFilename:
 
         # 日付かどうか正規表現でチェック
         if not re.match(r"\d{8}", name.split("_")[0]):
-            raise ValueError(f"Invalid filename by date format: {filename}")
+            raise MovieFilename.MovieFilenameError(
+                f"Invalid filename by date format: {filename}"
+            )
 
         self.origin = filename
         self.file_type = filename.split(".")[1]

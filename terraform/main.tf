@@ -36,6 +36,12 @@ resource "google_cloud_run_service" "video_editor" {
     spec {
 
       containers {
+        resources {
+          limits = {
+            cpu    = "1000m"  # 1 vCPU (1000m)
+            memory = "2Gi"    # 2GB
+          }
+        }
 
         image = var.cloudrun_image
 

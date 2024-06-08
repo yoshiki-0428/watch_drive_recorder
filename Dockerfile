@@ -6,6 +6,17 @@ WORKDIR /app
 
 # 必要なパッケージのインストール
 COPY requirements.txt requirements.txt
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    tesseract-ocr \
+    libtesseract-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr-jpn \
+    tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Python アプリケーションのコードをコピー
