@@ -34,8 +34,10 @@ resource "google_cloud_run_service" "video_editor" {
 
   template {
     spec {
+
       containers {
-        image = "gcr.io/movie-convertor/my-fastapi-app@sha256:b32a75b1a9893b388aa361e22c4ef70088fdf3497367e4e117096413889f71db"
+
+        image = var.cloudrun_image
 
         # 環境変数
         env {
@@ -48,7 +50,9 @@ resource "google_cloud_run_service" "video_editor" {
 #         }
         # 必要な環境変数を追加
       }
+      timeout_seconds = 1200 # 20分
       service_account_name = google_service_account.movie_convertor.email  # Cloud Run が使用するサービスアカウント
+
     }
     metadata {
       annotations = {
@@ -69,6 +73,31 @@ resource "google_cloud_run_service" "video_editor" {
   ]
 }
 
+resource "google_eventarc_trigger" "object_created_trigger" {
+  name        = "object-created-trigger"
+  location    = var.region
+  project     = var.project_id
+  service_account = google_service_account.movie_convertor.email
+
+  matching_criteria {
+    attribute = "type"
+    value     = "google.cloud.storage.object.v1.finalized"
+  }
+
+  matching_criteria {
+    attribute = "bucket"
+    value     = google_storage_bucket.video-source.name
+  }
+
+  destination {
+    cloud_run_service {
+      service = google_cloud_run_service.video_editor.name
+      path    = "/"  # Cloud Run サービスのパス (必要に応じて変更)
+      region  = google_cloud_run_service.video_editor.location
+    }
+  }
+}
+
 # Cloud Run API を有効化
 resource "google_project_service" "run_api" {
   service = "run.googleapis.com"
@@ -82,16 +111,3 @@ resource "google_service_account" "movie_convertor" {
   display_name = "Video Editor Service Account"
   create_ignore_already_exists = true
 }
-
-# サービスアカウントに Cloud Storage へのアクセス権限を付与
-# resource "google_project_iam_member" "video_editor_storage_admin" {
-#   project = var.project_id
-#   role    = "roles/storage.admin"
-#   member  = "serviceAccount:${google_service_account.movie_convertor.email}"
-# }
-#
-# resource "google_storage_bucket_iam_member" "video_editor_object_viewer" {
-#   bucket = google_storage_bucket.video_source.name
-#   role   = "roles/storage.objectViewer"
-#   member = "serviceAccount:${google_service_account.movie_convertor.email}"
-# }

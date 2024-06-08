@@ -6,6 +6,7 @@ app = FastAPI()
 
 
 @app.get("/")
+@app.post("/")
 def read_root():
     convert_ts_file("/Volumes/MyDriveUSB/movie/drive")
     return {"Hello": "World"}
