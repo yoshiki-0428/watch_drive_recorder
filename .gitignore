@@ -5,6 +5,9 @@ myenv
 .idea
 .DS_Store
 
+terraform/.terraform
+terraform/credential.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
