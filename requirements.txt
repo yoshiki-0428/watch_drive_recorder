@@ -19,3 +19,5 @@ watchdog==4.0.1
 geopy~=2.4.1
 pytesseract~=0.3.10
 loguru~=0.7.2
+uvicorn~=0.30.1
+fastapi~=0.111.0
