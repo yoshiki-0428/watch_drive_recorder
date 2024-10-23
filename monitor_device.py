@@ -1,23 +1,21 @@
 import argparse
 import os
+import shutil
 from loguru import logger
-from ts_convertor import aggregate_ts_files
+from ts_convertor import aggregate_ts_files, speed_up_ts_file
 from model.movie_filename import MovieFilename
+import tempfile
 
 
 def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path: str):
-    sd_card_path = os.path.join(
-        monitor_volume_path,
-        usb_name,
-        movie_target_path
-    )
+    sd_card_path = os.path.join(monitor_volume_path, usb_name, movie_target_path)
     if not os.path.exists(sd_card_path):
         logger.error(f"Path does not exist: {sd_card_path}")
         return
 
     # Process front and rear videos separately
-    front_videos_path = os.path.join(sd_card_path, 'front')
-    rear_videos_path = os.path.join(sd_card_path, 'rear')
+    front_videos_path = os.path.join(sd_card_path, "front")
+    rear_videos_path = os.path.join(sd_card_path, "rear")
 
     if not os.path.exists(front_videos_path):
         logger.warning(f"Front videos path does not exist: {front_videos_path}")
@@ -27,22 +25,26 @@ def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path:
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
-    # Aggregate front camera TS files by date
-    aggregate_ts_files_by_date(front_videos_path, os.path.join(output_dir, 'front'))
+    # Aggregate and speed up front camera TS files by date
+    aggregate_and_speed_up(
+        front_videos_path, os.path.join(output_dir, "front"), speed_factor=10.0
+    )
 
-    # Aggregate rear camera TS files by date
-    aggregate_ts_files_by_date(rear_videos_path, os.path.join(output_dir, 'rear'))
+    # Aggregate and speed up rear camera TS files by date
+    aggregate_and_speed_up(
+        rear_videos_path, os.path.join(output_dir, "rear"), speed_factor=10.0
+    )
 
 
-def aggregate_ts_files_by_date(input_dir: str, output_base_path: str):
+def aggregate_and_speed_up(
+    input_dir: str, output_base_path: str, speed_factor: float = 10.0
+):
     if not os.path.exists(input_dir):
         logger.warning(f"Input directory does not exist: {input_dir}")
         return
 
     ts_files = [
-        os.path.join(input_dir, f)
-        for f in os.listdir(input_dir)
-        if f.endswith('.ts')
+        os.path.join(input_dir, f) for f in os.listdir(input_dir) if f.endswith(".ts")
     ]
 
     if not ts_files:
@@ -64,9 +66,35 @@ def aggregate_ts_files_by_date(input_dir: str, output_base_path: str):
 
     for date, files in grouped_files.items():
         sorted_files = sorted(files)
-        output_file = f"{output_base_path}_{date}.ts"
-        logger.info(f"Aggregating {len(sorted_files)} files for date {date} into {output_file}")
-        aggregate_ts_files(sorted_files, output_file)
+        aggregated_output_file = f"{output_base_path}_{date}.ts"
+        logger.info(
+            f"Aggregating {len(sorted_files)} files for date {date} into {aggregated_output_file}"
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            logger.info(f"Copying files to temporary directory: {temp_dir}")
+            # Copy files to temp directory
+            for file in sorted_files:
+                shutil.copy(file, temp_dir)
+
+            temp_files = [
+                os.path.join(temp_dir, os.path.basename(f)) for f in sorted_files
+            ]
+
+            # Aggregate TS files from temp directory
+            aggregate_ts_files(temp_files, aggregated_output_file)
+
+        # After aggregation, speed up the aggregated file
+        speedup_output_file = f"{output_base_path}_{date}_speedup.ts"
+        logger.info(f"Speeding up {aggregated_output_file} to {speedup_output_file}")
+        speed_up_ts_file(
+            aggregated_output_file, speedup_output_file, speed_factor=speed_factor
+        )
+
+        # Replace the original aggregated file with the speedup file
+        os.remove(aggregated_output_file)
+        os.rename(speedup_output_file, aggregated_output_file)
+        logger.info(f"Successfully created speedup file: {aggregated_output_file}")
 
 
 def main():
@@ -93,9 +121,7 @@ def main():
     )
 
     args = parser.parse_args()
-    process_ts_files(
-        args.monitor_volume_path, args.usb_name, args.movie_target_path
-    )
+    process_ts_files(args.monitor_volume_path, args.usb_name, args.movie_target_path)
 
 
 if __name__ == "__main__":
