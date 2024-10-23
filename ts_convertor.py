@@ -27,7 +27,7 @@ def aggregate_ts_files(ts_files: list, output_file: str):
             "-i",
             list_file_path,
             "-c",
-            "copy",
+            "copy",  # Copy codecs since we're just concatenating
             output_file,
         ]
         logger.info(f"Running command: {' '.join(command)}")
@@ -63,7 +63,7 @@ def speed_up_ts_file(input_file: str, output_file: str, speed_factor: float = 10
     setpts = f"PTS/{speed_factor}"
 
     # Calculate atempo filters for audio
-    # atempo supports max 2.0 per filter, so chain multiple filters
+    # atempo supports a max of 2.0 per filter, so chain multiple filters
     atempo_filters = []
     remaining_speed = speed_factor
     while remaining_speed > 2.0:
@@ -82,6 +82,12 @@ def speed_up_ts_file(input_file: str, output_file: str, speed_factor: float = 10
         "[v]",
         "-map",
         "[a]",
+        "-c:v",
+        "libx264",  # Explicitly set video codec to libx264
+        "-c:a",
+        "aac",  # Explicitly set audio codec to aac
+        "-preset",
+        "fast",  # Optional: set encoding preset for speed
         output_file,
     ]
 
@@ -94,6 +100,6 @@ def speed_up_ts_file(input_file: str, output_file: str, speed_factor: float = 10
         if result.returncode != 0:
             logger.error(f"ffmpeg speed-up failed with error: {result.stderr}")
         else:
-            logger.info(f"Successfully created speedup file with audio: {output_file}")
+            logger.info(f"Successfully created speedup file: {output_file}")
     except Exception as e:
         logger.error(f"Exception during ffmpeg speed-up execution: {e}")

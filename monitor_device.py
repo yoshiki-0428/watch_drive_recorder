@@ -13,7 +13,7 @@ def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path:
         logger.error(f"Path does not exist: {sd_card_path}")
         return
 
-    # Process front and rear videos separately
+    # フロントとリアの動画ディレクトリを設定
     front_videos_path = os.path.join(sd_card_path, "front")
     rear_videos_path = os.path.join(sd_card_path, "rear")
 
@@ -25,19 +25,19 @@ def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path:
     output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
-    # Aggregate and speed up front camera TS files by date
+    # フロントカメラのTSファイルを集約・速度変更
     aggregate_and_speed_up(
-        front_videos_path, os.path.join(output_dir, "front"), speed_factor=10.0
+        front_videos_path, output_dir, camera="front", speed_factor=10.0
     )
 
-    # Aggregate and speed up rear camera TS files by date
+    # リアカメラのTSファイルを集約・速度変更
     aggregate_and_speed_up(
-        rear_videos_path, os.path.join(output_dir, "rear"), speed_factor=10.0
+        rear_videos_path, output_dir, camera="rear", speed_factor=10.0
     )
 
 
 def aggregate_and_speed_up(
-    input_dir: str, output_base_path: str, speed_factor: float = 10.0
+    input_dir: str, output_dir: str, camera: str, speed_factor: float = 10.0
 ):
     if not os.path.exists(input_dir):
         logger.warning(f"Input directory does not exist: {input_dir}")
@@ -51,11 +51,10 @@ def aggregate_and_speed_up(
         logger.warning(f"No .ts files found in {input_dir}")
         return
 
-    # Group TS files by date
+    # 日付ごとにTSファイルをグループ化
     grouped_files = {}
     for ts_file in ts_files:
         try:
-            filename = os.path.basename(ts_file)
             movie = MovieFilename(ts_file)
             date = movie.date
             if date not in grouped_files:
@@ -66,14 +65,16 @@ def aggregate_and_speed_up(
 
     for date, files in grouped_files.items():
         sorted_files = sorted(files)
-        aggregated_output_file = f"{output_base_path}_{date}.ts"
+
+        # ファイル名のルール: yyyymmdd_front.ts または yyyymmdd_rear.ts
+        aggregated_output_file = os.path.join(output_dir, f"{date}_{camera}.ts")
         logger.info(
             f"Aggregating {len(sorted_files)} files for date {date} into {aggregated_output_file}"
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:
             logger.info(f"Copying files to temporary directory: {temp_dir}")
-            # Copy files to temp directory
+            # 一時ディレクトリにファイルをコピー
             for file in sorted_files:
                 shutil.copy(file, temp_dir)
 
@@ -81,20 +82,34 @@ def aggregate_and_speed_up(
                 os.path.join(temp_dir, os.path.basename(f)) for f in sorted_files
             ]
 
-            # Aggregate TS files from temp directory
+            # 一時ディレクトリ内のTSファイルを集約
             aggregate_ts_files(temp_files, aggregated_output_file)
 
-        # After aggregation, speed up the aggregated file
-        speedup_output_file = f"{output_base_path}_{date}_speedup.ts"
+        # 速度変更後のファイル名
+        speedup_output_file = os.path.join(output_dir, f"{date}_{camera}_speedup.ts")
         logger.info(f"Speeding up {aggregated_output_file} to {speedup_output_file}")
         speed_up_ts_file(
             aggregated_output_file, speedup_output_file, speed_factor=speed_factor
         )
 
-        # Replace the original aggregated file with the speedup file
-        os.remove(aggregated_output_file)
-        os.rename(speedup_output_file, aggregated_output_file)
-        logger.info(f"Successfully created speedup file: {aggregated_output_file}")
+        # 速度変更が成功した場合、元の集約ファイルを削除し、速度変更ファイルにリネーム
+        if os.path.exists(speedup_output_file):
+            os.remove(aggregated_output_file)
+            os.rename(speedup_output_file, aggregated_output_file)
+            logger.info(f"Successfully created speedup file: {aggregated_output_file}")
+
+            # 処理が成功したら、元のソース `.ts` ファイルを削除
+            logger.info(f"Deleting source .ts files for date {date}")
+            for file in sorted_files:
+                try:
+                    os.remove(file)
+                    logger.debug(f"Deleted file: {file}")
+                except Exception as e:
+                    logger.error(f"Failed to delete file {file}: {e}")
+        else:
+            logger.error(
+                f"Speed-up failed for {aggregated_output_file}. Original aggregated file not deleted."
+            )
 
 
 def main():
