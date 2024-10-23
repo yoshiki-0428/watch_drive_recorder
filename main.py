@@ -1,13 +1,14 @@
-import os
 import shutil
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi_cloudevents import CloudEvent, install_fastapi_cloudevents
 from google.cloud import storage
 from loguru import logger
 import json
 from ts_convertor import convert_ts_file
 
 app = FastAPI()
+app = install_fastapi_cloudevents(app)
 
 
 def download_blob(bucket_name, source_blob_name, destination_file_name):
@@ -27,21 +28,26 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
 
 
 @app.post("/")
-def process_gcs_event(request_body: dict = None):
+async def on_event(event: CloudEvent, background_tasks: BackgroundTasks):
     try:
+        # eventをすべてログ表示
+        logger.debug(
+            f"Received event: {event.json}, type: {event.type}, dataschema: {event.dataschema}"
+        )
+
         # リクエストボディが空の場合、エラーを返す
-        if request_body is None:
+        if event is None:
             raise HTTPException(status_code=400, detail="Request body is empty")
 
-        bucket_name: str = request_body.get("bucket")
-        file_name: str = request_body.get("name")
+        bucket_name: str = event.data.get("bucket")
+        file_name: str = event.data.get("name")
 
         logger.info(f"Received event for file: gs://{bucket_name}/{file_name}")
 
         download_blob(bucket_name, file_name, f"input/{file_name}")
 
-        # 変換処理を実行
-        convert_ts_file("input")
+        # 変換処理を非同期実行
+        background_tasks.add_task(convert_ts_file, "input")
 
         return {"message": "Event received and processed successfully."}
     except (KeyError, json.JSONDecodeError) as e:

@@ -3,6 +3,8 @@ import shutil
 from typing import Dict, List, Tuple
 
 import ffmpeg
+from google.cloud import storage
+from google.cloud.storage import Blob, Bucket
 from loguru import logger
 
 from lib.geo import get_address_from_image
@@ -102,8 +104,17 @@ class TSFileConverter:
             os.remove(os.path.join(self.output_dir, f"{date_str}_sppedup.mp4"))
             os.remove(os.path.join(self.output_dir, f"{date_str}_crop.mp4"))
 
+            # s3にstorage_clientでuploadする TODO refactor
+            # storage_client = storage.Client()
+            # bucket: Bucket = storage_client.bucket(os.getenv("DEST_BUCKET"))
+            # blob: Blob = bucket.blob(f"{date_str}__{start_loc}_{end_loc}.mp4")
+            # blob.upload_from_filename(
+            #     os.path.join(self.output_dir, f"{date_str}__{start_loc}_{end_loc}.mp4")
+            # )
+
         # Delete ts file
         [os.remove(file.origin) for file in self.ts_files]
+        logger.info(f"{len(self.ts_files)} TS file's converting are done.")
 
     def __filter_ts_files(self, filter_duration: float = FILTER_DURATION) -> None:
         for filename in os.listdir(self.sd_card_path):

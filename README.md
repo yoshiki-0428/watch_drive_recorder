@@ -9,3 +9,9 @@
   --usb_name MyDriveUSB \
   --movie_target_path movie/drive
 ```
+
+```shell
+❯ python3 monitor_device.py \
+  --usb_name DASHCAM \
+  --movie_target_path video/front
+```
