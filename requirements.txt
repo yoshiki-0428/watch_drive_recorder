@@ -5,11 +5,14 @@ cachetools==5.3.3
 certifi==2024.6.2
 charset-normalizer==3.3.2
 click==8.1.7
+cloudevents==1.10.1
 decorator==4.4.2
+deprecation==2.1.0
 dnspython==2.6.1
 email_validator==2.1.1
 fastapi==0.111.0
 fastapi-cli==0.0.4
+fastapi-cloudevents==2.0.2
 ffmpeg-python==0.2.0
 future==1.0.0
 geographiclib==2.0
@@ -48,6 +51,7 @@ protobuf==4.25.3
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
 pydantic==2.7.3
+pydantic-settings==2.3.1
 pydantic_core==2.18.4
 Pygments==2.18.0
 pytesseract==0.3.10
