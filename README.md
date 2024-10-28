@@ -17,3 +17,10 @@ This script is run every day at 2:00 AM. It uploads the videos from the output d
 ```shell
 python upload_videos.py --output_dir "output" --archive_dir "archive" --upload_time "02:00"
 ```
+
+To run the script in the background, use the following command:
+
+```shell
+nohup python upload_videos.py --output_dir "output" --archive_dir "archive" --upload_time "02:00" > upload_videos.log 2>&1 &
+
+```
