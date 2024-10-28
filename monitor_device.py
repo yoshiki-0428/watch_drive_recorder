@@ -7,7 +7,17 @@ from model.movie_filename import MovieFilename
 import tempfile
 
 
-def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path: str):
+def process_ts_files(
+    monitor_volume_path: str, usb_name: str, movie_target_path: str, output_dir: str
+):
+    """
+    USBドライブからTSファイルを処理し、指定された出力ディレクトリに保存します。
+
+    :param monitor_volume_path: 外部デバイスがマウントされているディレクトリ
+    :param usb_name: USBドライブの名前
+    :param movie_target_path: USBドライブ内の動画ファイルが格納されているディレクトリ
+    :param output_dir: 出力ファイルを保存するディレクトリ
+    """
     sd_card_path = os.path.join(monitor_volume_path, usb_name, movie_target_path)
     if not os.path.exists(sd_card_path):
         logger.error(f"Path does not exist: {sd_card_path}")
@@ -22,7 +32,6 @@ def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path:
     if not os.path.exists(rear_videos_path):
         logger.warning(f"Rear videos path does not exist: {rear_videos_path}")
 
-    output_dir = "output"
     os.makedirs(output_dir, exist_ok=True)
 
     # フロントカメラのTSファイルを集約・速度変更
@@ -39,6 +48,14 @@ def process_ts_files(monitor_volume_path: str, usb_name: str, movie_target_path:
 def aggregate_and_speed_up(
     input_dir: str, output_dir: str, camera: str, speed_factor: float = 10.0
 ):
+    """
+    指定された入力ディレクトリ内のTSファイルを集約し、速度を変更して出力ディレクトリに保存します。
+
+    :param input_dir: 入力TSファイルが格納されているディレクトリ
+    :param output_dir: 出力ファイルを保存するディレクトリ
+    :param camera: カメラの種類（例: "front", "rear"）
+    :param speed_factor: 速度変更の倍率（デフォルトは10.0）
+    """
     if not os.path.exists(input_dir):
         logger.warning(f"Input directory does not exist: {input_dir}")
         return
@@ -134,10 +151,22 @@ def main():
         type=str,
         help="Directory containing the video files on the USB drive.",
     )
+    parser.add_argument(
+        "--output_dir",
+        default="output",
+        type=str,
+        help="Directory where the processed video files will be saved.",
+    )
 
     args = parser.parse_args()
-    process_ts_files(args.monitor_volume_path, args.usb_name, args.movie_target_path)
+    process_ts_files(
+        args.monitor_volume_path, args.usb_name, args.movie_target_path, args.output_dir
+    )
 
 
 if __name__ == "__main__":
+    # ログファイルの設定（オプション）
+    logger.add(
+        "process_device.log", rotation="10 MB", retention="10 days", compression="zip"
+    )
     main()
