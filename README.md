@@ -5,7 +5,7 @@
 Monitor the USB device and copy the video files to the target directory.
 
 ```shell
-python monitor_device.py --monitor_volume_path "/Volumes" --usb_name "CARDRIVE" --movie_target_path "video"
+python monitor_device.py --monitor_volume_path "/Volumes" --usb_name "CARDRIVE" --movie_target_path "video" --output_dir "output"
 ```
 
 ## upload_video.py
